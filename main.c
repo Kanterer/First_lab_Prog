@@ -1,10 +1,11 @@
 #include "string_collection.h"
-
+#include "string_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+void run_all_tests(void);
 static void print_menu(void) {
-    printf("\n===== String Collection Menu =====\n");
+    printf("\n===== Polymorphic String Collection Menu =====\n");
     printf("1. Add character to collection\n");
     printf("2. Add string to collection\n");
     printf("3. Print collection\n");
@@ -28,79 +29,71 @@ static void read_line(char *buffer, size_t size) {
         buffer[0] = '\0';
         return;
     }
-
     size_t i = 0;
-
     while (buffer[i] != '\0') {
         if (buffer[i] == '\n') {
             buffer[i] = '\0';
             break;
         }
-
         i++;
     }
 }
 
 int main(void) {
     StringCollection *collection = sc_create();
-
     if (collection == NULL) {
         printf("Error: failed to create collection.\n");
         return 1;
     }
-
     int option;
     char buffer1[512];
     char buffer2[512];
-
     do {
         print_menu();
-
         if (scanf("%d", &option) != 1) {
             printf("Input error.\n");
             clear_input_buffer();
             continue;
         }
-
         clear_input_buffer();
-
         switch (option) {
             case 1: {
-                char ch;
-
-                printf("Enter character: ");
-
-                if (scanf("%c", &ch) != 1) {
-                    printf("Input error.\n");
-                    clear_input_buffer();
+                printf("Enter one character: ");
+                read_line(buffer1, sizeof(buffer1));
+                if (buffer1[0] == '\0' || buffer1[1] != '\0') {
+                    printf("Error: please enter exactly one character.\n");
                     break;
                 }
-
-                clear_input_buffer();
-
-                SCStatus status = sc_push_char(collection, ch);
-
+                Element *element = sc_create_char_element(buffer1[0]);
+                if (element == NULL) {
+                    printf("Error: memory allocation failed.\n");
+                    break;
+                }
+                SCStatus status = sc_push(collection, element);
                 if (status == SC_OK) {
                     printf("Character added successfully.\n");
                 } else {
+                    element_destroy(element);
                     printf("Error: failed to add character.\n");
                 }
-
                 break;
             }
 
             case 2: {
                 printf("Enter string: ");
                 read_line(buffer1, sizeof(buffer1));
-
-                SCStatus status = sc_push_string(collection, buffer1);
-
+                Element *element = sc_create_string_element(buffer1);
+                if (element == NULL) {
+                    printf("Error: memory allocation failed.\n");
+                    break;
+                }
+                SCStatus status = sc_push(collection, element);
                 if (status == SC_OK) {
                     printf("String added successfully.\n");
                 } else {
+                    element_destroy(element);
                     printf("Error: failed to add string.\n");
                 }
-
                 break;
             }
 
@@ -113,83 +106,63 @@ int main(void) {
             case 4: {
                 printf("Enter first string: ");
                 read_line(buffer1, sizeof(buffer1));
-
                 printf("Enter second string: ");
                 read_line(buffer2, sizeof(buffer2));
-
-                char *result = sc_concat_strings(buffer1, buffer2);
-
+                char *result = string_concat(buffer1, buffer2);
                 if (result == NULL) {
                     printf("Error: failed to concatenate strings.\n");
                 } else {
                     printf("Result: %s\n", result);
                     free(result);
                 }
-
                 break;
             }
 
             case 5: {
                 size_t i;
                 size_t j;
-
                 printf("Enter string: ");
                 read_line(buffer1, sizeof(buffer1));
-
                 printf("Enter i: ");
-
                 if (scanf("%zu", &i) != 1) {
                     printf("Input error.\n");
                     clear_input_buffer();
                     break;
                 }
-
                 printf("Enter j: ");
-
                 if (scanf("%zu", &j) != 1) {
                     printf("Input error.\n");
                     clear_input_buffer();
                     break;
                 }
-
                 clear_input_buffer();
-
-                char *result = sc_substring(buffer1, i, j);
-
+                char *result = string_substring(buffer1, i, j);
                 if (result == NULL) {
                     printf("Error: incorrect indexes or memory error.\n");
                 } else {
                     printf("Substring: %s\n", result);
                     free(result);
                 }
-
                 break;
             }
 
             case 6: {
                 size_t i;
                 size_t j;
-
                 printf("Enter i: ");
-
                 if (scanf("%zu", &i) != 1) {
                     printf("Input error.\n");
                     clear_input_buffer();
                     break;
                 }
-
                 printf("Enter j: ");
-
                 if (scanf("%zu", &j) != 1) {
                     printf("Input error.\n");
                     clear_input_buffer();
                     break;
                 }
-
                 clear_input_buffer();
-
                 StringCollection *slice = sc_slice(collection, i, j);
-
                 if (slice == NULL) {
                     printf("Error: incorrect indexes or memory error.\n");
                 } else {
@@ -197,16 +170,13 @@ int main(void) {
                     sc_print(slice);
                     sc_destroy(slice);
                 }
-
                 break;
             }
 
             case 7: {
                 printf("Enter string: ");
                 read_line(buffer1, sizeof(buffer1));
-
-                StringCollection *words = sc_split_words(buffer1);
-
+                StringCollection *words = string_split_words(buffer1);
                 if (words == NULL) {
                     printf("Error: failed to split string.\n");
                 } else {
@@ -214,7 +184,6 @@ int main(void) {
                     sc_print(words);
                     sc_destroy(words);
                 }
-
                 break;
             }
 
@@ -233,10 +202,8 @@ int main(void) {
                 break;
             }
         }
-
     } while (option != 0);
 
     sc_destroy(collection);
-
     return 0;
 }
